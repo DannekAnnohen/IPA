@@ -3,11 +3,13 @@
 idea: 
 downgrade xSpec lists from type IPA to their respective types and create xInventory via function
 
+issue: in data IPA double usage of Modif in IPA Sound [Modif] and IPAm Modif
+
 -}
 module IPA_Data2
   (
-  IPA(..),
-  Property(..), T(..),
+  IPA(..), Sound(..),
+  Manner(..), Place(..), Voicing(..), Frontness(..), Openness(..), Roundedness(..),
 -- vowels and consonants
   iInventory, iSym, iSpec,
 
@@ -16,10 +18,7 @@ module IPA_Data2
 
 -- metatype modifiers for diacritics, suprasegmentals & tone
   Modif(..),  mInventory, mSym, mSpec,
-
-  Category(..),
-  Place, Manner, Voicing,
-  Openness, Frontness, Roundedness
+  Typing(..),
   )
 
 where
@@ -28,33 +27,38 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Map.Lazy as MapL
 
 -- a metatype for IPA symbols
-data IPA = IPA T Property Property Property | IPAb Boundary | IPAm Modif | Unreadable
+data IPA = IPA Sound [Modif] | IPAb Boundary | IPAm Modif | Unreadable
   deriving (Eq, Show, Read)
 
--- for inferring Consonant or Vowel status
-data T = C | V
+data Sound = C Place Manner Voicing | V Openness Frontness Roundedness | UnreadableSound
+  deriving (Eq, Show, Read)
+
+data Typing = Consonant | Vowel | Diacritic | Boundary
   deriving (Eq, Show, Read)
 
 -- all possible C or V properties
-data Property = Bilabial | Labiodental | Dental | Alveolar | Postalveolar | Retroflex | Palatal | Velar | Uvular | Pharyngeal | Glottal | Close | CloseCloseMid | CloseMid | Mid | OpenMid | OpenOpenMid | Open | Plosive | Nasal | Trill | Tap | Fricative | Lateralfricative | Approximant | Lateralapproximant | Front | FrontCentral | Central | BackCentral | Back | Voiced | Voiceless | Rounded | Unrounded
+data Place = Bilabial | Labiodental | Dental | Alveolar | Postalveolar | Retroflex | Palatal | Velar | Uvular | Pharyngeal | Glottal
   deriving (Eq, Show, Read)
 
--- type synonyms for feat function
-type Place = Property
-type Manner = Property
-type Voicing = Property
-
-type Openness = Property
-type Frontness = Property
-type Roundedness = Property
-
--- a metatype for all feature categories
-data Category = Place | Manner | Voicing | Openness | Frontness | Roundedness
+data Manner = Plosive | Nasal | Trill | Tap | Fricative | Lateralfricative | Approximant | Lateralapproximant
   deriving (Eq, Show, Read)
+
+data Voicing = Voiced | Voiceless
+  deriving (Eq, Show, Read)
+
+data Openness = Close | CloseCloseMid | CloseMid | Mid | OpenMid | OpenOpenMid | Open
+  deriving (Eq, Show, Read, Ord)
+
+data Frontness = Front | FrontCentral | Central | BackCentral | Back
+  deriving (Eq, Show, Read, Ord)
+
+data Roundedness = Rounded | Unrounded
+  deriving (Eq, Show, Read)
+
 
 -- diacritics, so far only diacritics for superscript symbols
 -- basic suprasegmentals and tone TONE IS IMPLEMENTED OUTSIDE IPA STANDARD! extra high -> falling, extra low -> rising
-data Modif = Aspirated | Labialized | Palatalized | Velarized | Pharyngealized | NasalRelease | LateralRelease | Long | HalfLong | FallingTone | HighTone | MidTone | LowTone | RisingTone
+data Modif = Aspirated | Labialized | Palatalized | Velarized | Pharyngealized | NasalRelease | LateralRelease | Long | HalfLong | FallingTone | HighTone | MidTone | LowTone | RisingTone | UnreadableModif
   deriving (Eq, Show, Read)
 
 -- we need something to deal with whitespaces, morpheme boundaries (and probably worse ): ) I also derived it from Ord because we might care for a ranking of boundaries once I find it in me to abandon the not-too phonological concept of "whitespace" for sth cooler
@@ -86,13 +90,13 @@ mSym = diaSym++supSym++tonSym
 mSpec = diaSpec++supSpec++tonSpec
 
 diaSym = ['ʰ','ʷ','ʲ','ˠ','ˤ','ⁿ','ˡ']
-diaSpec = [IPAm Aspirated, IPAm Labialized, IPAm Palatalized, IPAm Velarized, IPAm Pharyngealized, IPAm NasalRelease, IPAm LateralRelease]
+diaSpec = [Aspirated, Labialized, Palatalized, Velarized, Pharyngealized, NasalRelease, LateralRelease]
 
 supSym = ['ː','ˑ']
-supSpec = [IPAm Long, IPAm HalfLong]
+supSpec = [Long, HalfLong]
 
 tonSym = ['˥','˦','˧','˨','˩']
-tonSpec = [IPAm FallingTone, IPAm HighTone, IPAm MidTone, IPAm LowTone, IPAm RisingTone]
+tonSpec = [FallingTone, HighTone, MidTone, LowTone, RisingTone]
 
 iSym = cSym++vSym
 iSpec = cSpec++vSpec
@@ -100,95 +104,95 @@ iSpec = cSpec++vSpec
 vSym = ['i','y','ɨ','ʉ','ɯ','u','ɪ','ʏ','ʊ','e','ø','ɘ','ɵ','ɤ','o','ə',
   'ɛ','œ','ɜ','ɞ','ʌ','ɔ','æ','ɐ','a','ɶ','ɑ','ɒ']
 
-vSpec = [IPA V Close Front Unrounded,
- IPA V Close Front Rounded,
- IPA V Close Central Unrounded,
- IPA V Close Central Rounded,
- IPA V Close Back Unrounded,
- IPA V Close Back Rounded,
- IPA V CloseCloseMid FrontCentral Unrounded,
- IPA V CloseCloseMid FrontCentral Rounded,
- IPA V CloseCloseMid BackCentral Rounded,
- IPA V CloseMid Front Unrounded,
- IPA V CloseMid Front Rounded,
- IPA V CloseMid Central Unrounded,
- IPA V CloseMid Central Rounded,
- IPA V CloseMid Back Unrounded,
- IPA V CloseMid Back Rounded,
- IPA V Mid Central Unrounded,
- IPA V OpenMid Front Unrounded,
- IPA V OpenMid Front Rounded,
- IPA V OpenMid Central Unrounded,
- IPA V OpenMid Central Rounded,
- IPA V OpenMid Back Unrounded,
- IPA V OpenMid Back Rounded,
- IPA V OpenOpenMid Front Unrounded,
- IPA V OpenOpenMid Central Unrounded,
- IPA V Open Front Unrounded,
- IPA V Open Front Rounded,
- IPA V Open Back Unrounded,
- IPA V Open Back Rounded]
-
 cSym = ['p','b','m','ʙ','ɸ','β','ɱ','ⱱ','f','v','ʋ','θ','ð','t','d','n','r','ɾ',
   's','z','ɬ','ɮ','ɹ','l','ʃ','ʒ','ʈ','ɖ','ɳ','ɽ','ʂ','ʐ','ɻ','ɭ','c','ɟ','ɲ','ç','ʝ',
   'j','ʎ','k','g','ŋ','x','ɣ','ɰ','ʟ','q','ɢ','ɴ','ʀ','χ','ʁ','ħ','ʕ','ʔ','h','ɦ']
 
-cSpec = [IPA C Bilabial Plosive Voiceless,
- IPA C Bilabial Plosive Voiced,
- IPA C Bilabial Nasal Voiced,
- IPA C Bilabial Trill Voiced,
- IPA C Bilabial Fricative Voiceless,
- IPA C Bilabial Fricative Voiced,
- IPA C Labiodental Nasal Voiced,
- IPA C Labiodental Fricative Voiced,
- IPA C Labiodental Fricative Voiceless,
- IPA C Labiodental Tap Voiced,
- IPA C Labiodental Approximant Voiced,
- IPA C Dental Fricative Voiceless,
- IPA C Dental Fricative Voiced,
- IPA C Alveolar Plosive Voiceless,
- IPA C Alveolar Plosive Voiced,
- IPA C Alveolar Nasal Voiced,
- IPA C Alveolar Trill Voiced,
- IPA C Alveolar Tap Voiced,
- IPA C Alveolar Fricative Voiceless,
- IPA C Alveolar Fricative Voiced,
- IPA C Alveolar Lateralfricative Voiceless,
- IPA C Alveolar Lateralfricative Voiced,
- IPA C Alveolar Approximant Voiced,
- IPA C Alveolar Lateralapproximant Voiced,
- IPA C Postalveolar Fricative Voiceless,
- IPA C Postalveolar Fricative Voiced,
- IPA C Retroflex Plosive Voiceless,
- IPA C Retroflex Plosive Voiced,
- IPA C Retroflex Nasal Voiceless,
- IPA C Retroflex Tap Voiceless,
- IPA C Retroflex Fricative Voiceless,
- IPA C Retroflex Fricative Voiced,
- IPA C Retroflex Approximant Voiced,
- IPA C Retroflex Lateralapproximant Voiced,
- IPA C Palatal Plosive Voiceless,
- IPA C Palatal Plosive Voiced,
- IPA C Palatal Nasal Voiced,
- IPA C Palatal Fricative Voiceless,
- IPA C Palatal Fricative Voiced,
- IPA C Palatal Approximant Voiced,
- IPA C Palatal Lateralapproximant Voiced,
- IPA C Velar Plosive Voiceless,
- IPA C Velar Plosive Voiced,
- IPA C Velar Nasal Voiced,
- IPA C Velar Fricative Voiceless,
- IPA C Velar Fricative Voiced,
- IPA C Velar Approximant Voiced,
- IPA C Velar Lateralapproximant Voiced,
- IPA C Uvular Plosive Voiceless,
- IPA C Uvular Plosive Voiced,
- IPA C Uvular Nasal Voiced,
- IPA C Uvular Trill Voiced,
- IPA C Uvular Fricative Voiceless,
- IPA C Uvular Fricative Voiced,
- IPA C Pharyngeal Fricative Voiceless,
- IPA C Pharyngeal Fricative Voiced,
- IPA C Glottal Plosive Voiceless,
- IPA C Glottal Fricative Voiceless,
- IPA C Glottal Fricative Voiced]
+vSpec = [V Close Front Unrounded,
+ V Close Front Rounded,
+ V Close Central Unrounded,
+ V Close Central Rounded,
+ V Close Back Unrounded,
+ V Close Back Rounded,
+ V CloseCloseMid FrontCentral Unrounded,
+ V CloseCloseMid FrontCentral Rounded,
+ V CloseCloseMid BackCentral Rounded,
+ V CloseMid Front Unrounded,
+ V CloseMid Front Rounded,
+ V CloseMid Central Unrounded,
+ V CloseMid Central Rounded,
+ V CloseMid Back Unrounded,
+ V CloseMid Back Rounded,
+ V Mid Central Unrounded,
+ V OpenMid Front Unrounded,
+ V OpenMid Front Rounded,
+ V OpenMid Central Unrounded,
+ V OpenMid Central Rounded,
+ V OpenMid Back Unrounded,
+ V OpenMid Back Rounded,
+ V OpenOpenMid Front Unrounded,
+ V OpenOpenMid Central Unrounded,
+ V Open Front Unrounded,
+ V Open Front Rounded,
+ V Open Back Unrounded,
+ V Open Back Rounded]
+
+cSpec = [C Bilabial Plosive Voiceless,
+ C Bilabial Plosive Voiced,
+ C Bilabial Nasal Voiced,
+ C Bilabial Trill Voiced,
+ C Bilabial Fricative Voiceless,
+ C Bilabial Fricative Voiced,
+ C Labiodental Nasal Voiced,
+ C Labiodental Fricative Voiced,
+ C Labiodental Fricative Voiceless,
+ C Labiodental Tap Voiced,
+ C Labiodental Approximant Voiced,
+ C Dental Fricative Voiceless,
+ C Dental Fricative Voiced,
+ C Alveolar Plosive Voiceless,
+ C Alveolar Plosive Voiced,
+ C Alveolar Nasal Voiced,
+ C Alveolar Trill Voiced,
+ C Alveolar Tap Voiced,
+ C Alveolar Fricative Voiceless,
+ C Alveolar Fricative Voiced,
+ C Alveolar Lateralfricative Voiceless,
+ C Alveolar Lateralfricative Voiced,
+ C Alveolar Approximant Voiced,
+ C Alveolar Lateralapproximant Voiced,
+ C Postalveolar Fricative Voiceless,
+ C Postalveolar Fricative Voiced,
+ C Retroflex Plosive Voiceless,
+ C Retroflex Plosive Voiced,
+ C Retroflex Nasal Voiceless,
+ C Retroflex Tap Voiceless,
+ C Retroflex Fricative Voiceless,
+ C Retroflex Fricative Voiced,
+ C Retroflex Approximant Voiced,
+ C Retroflex Lateralapproximant Voiced,
+ C Palatal Plosive Voiceless,
+ C Palatal Plosive Voiced,
+ C Palatal Nasal Voiced,
+ C Palatal Fricative Voiceless,
+ C Palatal Fricative Voiced,
+ C Palatal Approximant Voiced,
+ C Palatal Lateralapproximant Voiced,
+ C Velar Plosive Voiceless,
+ C Velar Plosive Voiced,
+ C Velar Nasal Voiced,
+ C Velar Fricative Voiceless,
+ C Velar Fricative Voiced,
+ C Velar Approximant Voiced,
+ C Velar Lateralapproximant Voiced,
+ C Uvular Plosive Voiceless,
+ C Uvular Plosive Voiced,
+ C Uvular Nasal Voiced,
+ C Uvular Trill Voiced,
+ C Uvular Fricative Voiceless,
+ C Uvular Fricative Voiced,
+ C Pharyngeal Fricative Voiceless,
+ C Pharyngeal Fricative Voiced,
+ C Glottal Plosive Voiceless,
+ C Glottal Fricative Voiceless,
+ C Glottal Fricative Voiced]
