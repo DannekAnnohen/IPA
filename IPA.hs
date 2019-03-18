@@ -1,3 +1,7 @@
+-- The International Phonetic Alphabet with Haskell
+-- Robert Max Polter
+-- 18 Mar 2019
+
 module IPA
 
   (
@@ -17,7 +21,6 @@ module IPA
 
 where
 
--- I use this package to implement IPA symbol-meaning mapping dictionaries. A qualified import means that whenever I call a function from this package I have to write it like so : Map.function
 import qualified Data.Map.Lazy as Map
 import Data.List
 import Data.Maybe
@@ -25,7 +28,6 @@ import IPA_data
 import IPA_util (tuplify, showL, partial, satisfy, elemIndexSatisfy)
 
 -- parser for [Char] to [IPA], view output with function present
--- firstlevel check with xSym seems silly, is it really faster?
 parseIPA :: [Char] -> [IPA]
 parseIPA str = spellback str [] [] []
 
@@ -64,7 +66,6 @@ mergeIPA sa dia = flip (:) [] $ IPA $ tuplify sa $ cut $ filter (/= TieEnd) dia
       Nothing  -> [x]
 
 
--- checking for complex defined characters proved notoriously difficult. has to check every complex entry before resorting to sInventory. solution: implement partial lookup function for Data.Map and unify xInventory and sInventory
 backparseIPA :: [IPA] -> [Char]
 backparseIPA [] = ""
 backparseIPA (b@(IPAb _):ipas) = (fromJust $ Map.lookup b bInventory_inv) : backparseIPA ipas
@@ -116,7 +117,7 @@ parseSym x      | x `elem` sSym = case Map.lookup x sInventory of
                 | otherwise = Unreadable x
 
 
--- formatting [IPA]
+-- formatting [IPA], uses showIPA
 present [] = putStr ""
 present (x:xs) = case typing x of
   Boundary -> case boundary x of

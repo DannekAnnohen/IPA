@@ -60,7 +60,7 @@ import Data.Char
 import IPA_util
 
 
--- deriving Ord here and in all other constituent data declarations for implmentation of Maps (this leaves room for improvement, motivated for openness/frontness, but rest?)
+-- deriving Ord here and in all other constituent data declarations for implmentation of Maps
 data IPA = IPA [((Sound,Airstream), [Modif])] | IPAb Boundary | IPAs ((Sound,Airstream),[Modif]) | IPAm Modif | Unreadable Char
   deriving (Eq, Read, Ord) 
 
@@ -80,7 +80,7 @@ unreadableChar :: IPA -> Maybe Char
 unreadableChar (Unreadable c) = Just c
 unreadableChar _ = Nothing
 
-{- Copy from IPA_util
+{- Copy from IPA_util, combine with functions above
 satisfy :: Foldable t => (a -> Bool) -> t a -> Bool
 satisfy f ipal = not $ foldl (flip ((==) . f)) False ipal
 
@@ -216,7 +216,7 @@ airstream _ = error "call to function 'airstream' for non-sound ipa"
 isAirstream :: IPA -> Airstream -> Bool
 isAirstream ipa air = (==) air $ airstream ipa
 
--- intentionally not defined for simple modifierlists
+-- intentionally undefined for simple modifierlists
 complexAirstream :: Airstream -> [Airstream]
 complexAirstream (Air xs) = xs
 
@@ -245,9 +245,7 @@ instance ShowIPA Modif where
   showIPA EjectivityMarker = show EjectivityMarker
   showIPA modif = tail $ concat $ intersperse "-" $ splitConserve isUpper $ show modif
 
--- very unhappy with output for complx modifiers [Modif [m1], Modif [m2], ..], but it seems to be the least bad way
--- i really have to keep the recursive type invisible
--- f modifiers should be invisible
+
 modifiers :: IPA -> [Modif]
 modifiers (IPA s) = case length $ m of
   1 -> head m
@@ -648,7 +646,7 @@ xSpec = [((V Mid Central Unrounded, PulmonicEgressive), [Rhotacized]), ((V OpenM
 -- inventories for simple symbols
 sInventory = Map.fromList soundSource
 sInventory_inv = Map.fromListWith (++) soundSource_inv
--- for looking up
+-- for looking up (parser)
 sSym = peSym++giSym++liSym
 
 soundSource = lingualingressive++glottalicingressive++pulmonicegressive

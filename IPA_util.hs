@@ -42,8 +42,7 @@ defaultize base x = catch x
       1 -> head x
       _ -> error "conflicting and/or redundant modifiers"
 
--- abstract for general partial matches (a,b) -> [(a,b)] -> ((a,b),b), set of functions? partial match boolean, dependency on splitWith limits flexibility
---partial :: ((Sound,Airstream), [Modif]) -> [((Sound,Airstream), [Modif])] -> (((Sound, Airstream), [Modif]), [Modif])
+-- abstract for general partial matches
 partial :: (Eq a1, Eq a2, Foldable t) => (a1, [a2]) -> [(a1, t a2)] -> ((a1, [a2]), [a2])
 partial (s,m) [] = ((s,[]),m)
 partial (s,m) ((s2,m2):sms) | ((s == s2) && (matched /= [])) = ((s,matched),unmatched)
@@ -51,6 +50,7 @@ partial (s,m) ((s2,m2):sms) | ((s == s2) && (matched /= [])) = ((s,matched),unma
   where
     (matched, unmatched) = splitWith ((flip elem) m2) m
 
+-- custom split functions
 splitWith :: (a -> Bool) -> [a] -> ([a],[a]) 
 splitWith f l = splitWith' f l [] []
 
